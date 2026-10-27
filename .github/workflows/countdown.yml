@@ -1,0 +1,61 @@
+# Genereert de countdown-GIF's en publiceert ze op GitHub Pages.
+# Instelling vooraf: Settings → Pages → Source: "GitHub Actions".
+name: Countdown bijwerken
+
+on:
+  schedule:
+    # Elke 5 minuten (het minimum van GitHub), net naast het hele uur
+    # omdat GitHub op :00 het drukst is. GitHub kan runs vertragen of overslaan.
+    - cron: "2-59/5 * * * *"
+  push:
+    branches: [main]
+  workflow_dispatch: # handmatig starten via het tabblad Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Lettertype controleren
+        run: |
+          if ! ls fonts/*.ttf fonts/*.otf >/dev/null 2>&1 && \
+             [ ! -f /usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf ]; then
+            sudo apt-get update && sudo apt-get install -y fonts-dejavu-core
+          fi
+
+      - name: Pillow installeren
+        run: pip install -r requirements.txt
+
+      # --offset 60: de GIF staat ongeveer een minuut na het genereren online,
+      # dus het aftellen begint vanaf dat moment.
+      - name: GIF's genereren
+        run: python scripts/generate_countdown.py --offset 60
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

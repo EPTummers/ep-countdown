@@ -1,0 +1,6 @@
+Optioneel: zet hier één vet lettertype (.ttf of .otf), bijvoorbeeld Montserrat ExtraBold
+(gratis te downloaden via fonts.google.com, licentie SIL Open Font License).
+
+Staat hier geen lettertype, dan gebruikt GitHub automatisch DejaVu Sans Bold.
+Zet hier geen Arial of andere lettertypes zonder licentie om te verspreiden:
+de repository is openbaar.
