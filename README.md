@@ -8,7 +8,7 @@ Er is geen PHP en geen eigen server nodig.
 
 1. Elke 5 minuten start GitHub Actions het script `scripts/generate_countdown.py`.
 2. Het script leest alle campagnes in `campaigns/` en maakt per campagne een GIF:
-   610 × 190 px, maximaal 180 frames van 1 seconde (3 minuten aftellen),
+   610 × 164 px, maximaal 180 frames van 1 seconde (3 minuten aftellen),
    met vier vakken: DAGEN | UREN | MINUTEN | SECONDEN.
 3. Na de einddatum toont de GIF de eindmelding.
 4. De GIF's worden gepubliceerd op GitHub Pages:
@@ -57,11 +57,16 @@ Voorbeeld `campaigns/tv-inruilactie.json`:
 | `slug` | Mapnaam in de URL: alleen kleine letters, cijfers en streepjes |
 | `einde` | Einddatum en -tijd als `JJJJ-MM-DD UU:MM:SS` |
 | `tijdzone` | Altijd `Europe/Amsterdam` (zomer- en wintertijd gaan automatisch) |
-| `kader` | `true` = oranje kader in de GIF, `false` = geen kader (de snippet zet al een gele rand) |
-| `kop` | Tekst boven de vakken |
-| `eindmelding` | Eén of twee regels na afloop (de tweede regel wordt oranje) |
-| `eindmelding_sub` | Kleine groene regel onder de eindmelding (mag `""` zijn) |
-| `kleuren` | Hex-kleuren: `achtergrond`, `vak`, `cijfers`, `labels`, `accent`, `kop` |
+| `kop` | Grote titel bovenaan de GIF |
+| `subkop` | Regel onder de titel, bijv. `NOG T/M 1 NOVEMBER  •  OP=OP` |
+| `labels` | Teksten in de oranje balken, bijv. `["DAGEN", "UREN", "MIN", "SEC"]` |
+| `eindmelding` | Tekst in het witte vak na afloop |
+| `eindmelding_sub` | Tekst in de oranje balk na afloop (mag `""` zijn) |
+| `kleuren` | Hex-kleuren: `achtergrond`, `rand`, `vak`, `cijfers`, `labelbalk`, `labeltekst`, `schaduw`, `kop` |
+
+De vormgeving volgt de eerdere EP-countdown: geel vlak (`#FFF200`), groene rand (`#2CA843`),
+witte vakken met schaduw, donkergrijze cursieve cijfers en oranje labelbalken (`#F37300`).
+Teksten en cijfers worden smal en cursief getekend, zodat het met elk vet lettertype lijkt op het origineel.
 
 **Nieuwe campagne:** kopieer een JSON-bestand, geef het een nieuwe naam en een nieuwe `slug`,
 pas `einde` en de teksten aan en sla op. De workflow draait dan automatisch.

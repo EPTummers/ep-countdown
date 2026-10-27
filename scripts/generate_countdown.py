@@ -27,21 +27,35 @@ CAMPAIGN_DIR = ROOT / "campaigns"
 OUTPUT_DIR = ROOT / "_site"
 
 WIDTH = 610           # maximale breedte voor de nieuwsbrief (650 px)
-HEIGHT = 190
+HEIGHT = 164
 FRAMES = 180          # maximaal 180 frames ...
 FRAME_MS = 1000       # ... van 1 seconde = 180 seconden aftellen
 PALETTE_COLORS = 48   # minder kleuren = kleiner bestand
 
-LABELS = ["DAGEN", "UREN", "MINUTEN", "SECONDEN"]
+DEFAULT_LABELS = ["DAGEN", "UREN", "MINUTEN", "SECONDEN"]
 
+# EP-stijl van de eerdere countdown: geel vlak, groene rand, witte vakken, oranje labelbalk.
 DEFAULT_COLORS = {
-    "achtergrond": "#171717",
-    "vak": "#2B2B2B",
-    "cijfers": "#FFFFFF",
-    "labels": "#28A745",
-    "accent": "#F28C00",
-    "kop": "#FFFFFF",
+    "achtergrond": "#FFF200",
+    "rand": "#2CA843",
+    "vak": "#FFFFFF",
+    "cijfers": "#222222",
+    "labelbalk": "#F37300",
+    "labeltekst": "#FFFFFF",
+    "schaduw": "#222222",
+    "kop": "#222222",
 }
+
+# Maten van de vier tijdvakken (in pixels)
+BOX_W, BOX_GAP, BOX_LEFT = 121, 11, 48
+BOX_TOP, BOX_BOTTOM, BOX_BORDER = 65, 150, 3
+LABEL_H = 21
+SHADOW = 4
+
+# Cijfers en teksten worden smaller en schuin getekend (condensed italic),
+# zodat het met elk vet lettertype op de originele EP-countdown lijkt.
+CONDENSE = 0.82
+SLANT = 0.2
 
 # Eerst een eigen lettertype in fonts/, anders een systeemlettertype.
 FONT_FALLBACKS = [
@@ -63,25 +77,55 @@ class Renderer:
     def __init__(self, campaign, font_path):
         self.c = campaign
         self.colors = {**DEFAULT_COLORS, **campaign.get("kleuren", {})}
-        self.font_digits = ImageFont.truetype(font_path, 70)
-        # Labels zo groot mogelijk, maar 'SECONDEN' moet in het vak passen.
-        size = 21
-        while size > 12:
-            self.font_label = ImageFont.truetype(font_path, size)
-            if self.font_label.getlength(max(LABELS, key=len)) <= 116:
-                break
+        self.labels = campaign.get("labels", DEFAULT_LABELS)
+        self.font_path = font_path
+        self._fonts = {}
+
+    def _font(self, size):
+        if size not in self._fonts:
+            self._fonts[size] = ImageFont.truetype(self.font_path, size)
+        return self._fonts[size]
+
+    def _text_mask(self, text, size):
+        """Tekst als grijswaardenmasker, smaller gemaakt en schuin gezet."""
+        font = self._font(size)
+        left, top, right, bottom = font.getbbox(text)
+        w, h = right - left, bottom - top
+        mask = Image.new("L", (w + 4, h + 4), 0)
+        ImageDraw.Draw(mask).text((2 - left, 2 - top), text, font=font, fill=255)
+        mask = mask.resize((max(1, round(mask.width * CONDENSE)), mask.height), Image.LANCZOS)
+        extra = round(SLANT * mask.height)
+        return mask.transform((mask.width + extra, mask.height), Image.AFFINE,
+                              (1, SLANT, -extra, 0, 1, 0), resample=Image.BICUBIC)
+
+    def _text(self, img, center, text, size, color, max_width=None):
+        """Tekst gecentreerd tekenen; zo nodig kleiner tot hij in max_width past."""
+        mask = self._text_mask(text, size)
+        while max_width and mask.width > max_width and size > 10:
             size -= 1
-        self.font_head = ImageFont.truetype(font_path, 22)
-        self.font_colon = ImageFont.truetype(font_path, 54)
-        self.font_end = ImageFont.truetype(font_path, 42)
-        self.font_end_sub = ImageFont.truetype(font_path, 20)
+            mask = self._text_mask(text, size)
+        bbox = mask.getbbox() or (0, 0, mask.width, mask.height)
+        mask = mask.crop(bbox)
+        x = round(center[0] - mask.width / 2)
+        y = round(center[1] - mask.height / 2)
+        img.paste(Image.new("RGB", mask.size, color), (x, y), mask)
+
+    def _box(self, draw, x0, x1, label_top):
+        """Wit vak met groene rand, oranje labelbalk en schaduw rechtsonder."""
+        draw.rectangle([x0 + SHADOW, BOX_TOP + SHADOW, x1 + SHADOW, BOX_BOTTOM + SHADOW],
+                       fill=self.colors["schaduw"])
+        draw.rectangle([x0, BOX_TOP, x1, BOX_BOTTOM], fill=self.colors["rand"])
+        inner = BOX_BORDER
+        draw.rectangle([x0 + inner, BOX_TOP + inner, x1 - inner, label_top - 1],
+                       fill=self.colors["vak"])
+        draw.rectangle([x0 + inner, label_top, x1 - inner, BOX_BOTTOM - inner],
+                       fill=self.colors["labelbalk"])
 
     def _base(self):
         img = Image.new("RGB", (WIDTH, HEIGHT), self.colors["achtergrond"])
         draw = ImageDraw.Draw(img)
-        # Optioneel kader in de GIF; uit als de Ternair-snippet al een rand om de afbeelding zet.
-        if self.c.get("kader", True):
-            draw.rectangle([0, 0, WIDTH - 1, HEIGHT - 1], outline=self.colors["accent"], width=3)
+        draw.rectangle([0, 0, WIDTH - 1, HEIGHT - 1], outline=self.colors["rand"], width=4)
+        self._text(img, (WIDTH / 2, 24), self.c.get("kop", ""), 40, self.colors["kop"], WIDTH - 40)
         return img, draw
 
     def countdown_frame(self, seconds_left):
@@ -91,40 +135,43 @@ class Renderer:
         values = [days, hours, minutes, seconds]
 
         img, draw = self._base()
-        draw.text((WIDTH // 2, 28), self.c.get("kop", "NOG MAAR"),
-                  font=self.font_head, fill=self.colors["kop"], anchor="mm")
+        if self.c.get("subkop"):
+            self._text(img, (WIDTH / 2, 50), self.c["subkop"], 22, self.colors["kop"], WIDTH - 60)
 
-        box_w, box_h, gap = 128, 122, 22
-        left = (WIDTH - (4 * box_w + 3 * gap)) // 2
-        top = 50
-        for i, (value, label) in enumerate(zip(values, LABELS)):
-            x = left + i * (box_w + gap)
-            draw.rectangle([x, top, x + box_w, top + box_h], fill=self.colors["vak"])
-            draw.rectangle([x, top, x + box_w, top + 4], fill=self.colors["accent"])
-            draw.text((x + box_w // 2, top + 52), f"{value:02d}",
-                      font=self.font_digits, fill=self.colors["cijfers"], anchor="mm")
-            draw.text((x + box_w // 2, top + 104), label,
-                      font=self.font_label, fill=self.colors["labels"], anchor="mm")
-            if i < 3:
-                draw.text((x + box_w + gap // 2, top + 48), ":",
-                          font=self.font_colon, fill=self.colors["accent"], anchor="mm")
+        label_top = BOX_BOTTOM - BOX_BORDER - LABEL_H
+        for i, (value, label) in enumerate(zip(values, self.labels)):
+            x0 = BOX_LEFT + i * (BOX_W + BOX_GAP)
+            x1 = x0 + BOX_W - 1
+            self._box(draw, x0, x1, label_top)
+            mid = (x0 + x1) / 2
+            self._text(img, (mid, (BOX_TOP + BOX_BORDER + label_top) / 2), f"{value:02d}",
+                       72, self.colors["cijfers"], BOX_W - 16)
+            self._text(img, (mid, label_top + LABEL_H / 2), label,
+                       20, self.colors["labeltekst"], BOX_W - 14)
         return img
 
     def end_frame(self):
         img, draw = self._base()
-        lines = self.c.get("eindmelding", ["DEZE ACTIE", "IS AFGELOPEN"])
+        message = self.c.get("eindmelding", "DEZE ACTIE IS AFGELOPEN")
+        if isinstance(message, list):
+            message = " ".join(message)
         sub = self.c.get("eindmelding_sub", "")
-        line_h = 50
-        block_h = len(lines) * line_h + (34 if sub else 0)
-        y = (HEIGHT - block_h) // 2 + line_h // 2
-        fills = [self.colors["cijfers"], self.colors["accent"]]
-        for i, line in enumerate(lines):
-            draw.text((WIDTH // 2, y), line, font=self.font_end,
-                      fill=fills[i % 2], anchor="mm")
-            y += line_h
+
+        x0 = BOX_LEFT
+        x1 = BOX_LEFT + 4 * BOX_W + 3 * BOX_GAP - 1
+        label_top = BOX_BOTTOM - BOX_BORDER - (LABEL_H + 4 if sub else 0)
+        draw.rectangle([x0 + SHADOW, 48 + SHADOW, x1 + SHADOW, BOX_BOTTOM + SHADOW],
+                       fill=self.colors["schaduw"])
+        draw.rectangle([x0, 48, x1, BOX_BOTTOM], fill=self.colors["rand"])
+        draw.rectangle([x0 + BOX_BORDER, 48 + BOX_BORDER, x1 - BOX_BORDER, label_top - 1],
+                       fill=self.colors["vak"])
         if sub:
-            draw.text((WIDTH // 2, y + 2), sub, font=self.font_end_sub,
-                      fill=self.colors["labels"], anchor="mm")
+            draw.rectangle([x0 + BOX_BORDER, label_top, x1 - BOX_BORDER, BOX_BOTTOM - BOX_BORDER],
+                           fill=self.colors["labelbalk"])
+            self._text(img, (WIDTH / 2, label_top + (LABEL_H + 4) / 2), sub,
+                       20, self.colors["labeltekst"], x1 - x0 - 20)
+        self._text(img, (WIDTH / 2, (48 + BOX_BORDER + label_top) / 2), message,
+                   46, self.colors["cijfers"], x1 - x0 - 24)
         return img
 
 

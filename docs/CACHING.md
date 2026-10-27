@@ -44,7 +44,7 @@ Afbeeldingen uitgeschakeld? Dan ziet de ontvanger de alt-tekst
 - Geplande workflows draaien minimaal elke 5 minuten. Vaker kan niet.
 - Bij een openbare repository zet GitHub geplande workflows uit na **60 dagen zonder wijzigingen**.
   Je krijgt daar een mail over. Zet de workflow dan weer aan via **Actions**.
-- De GIF zelf is ongeveer 140 KB voor 180 frames. Alleen het secondenvak verandert per frame,
+- De GIF zelf is ongeveer 210 KB voor 180 frames. Alleen het secondenvak verandert per frame,
   en de generator slaat alleen die wijziging op. Dat is ruim onder de 1 MB die we voor e-mail aanhouden.
 
 ## Conclusie

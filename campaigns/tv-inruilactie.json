@@ -4,16 +4,19 @@
   "slug": "tv-inruilactie",
   "einde": "2026-11-01 23:59:59",
   "tijdzone": "Europe/Amsterdam",
-  "kader": false,
-  "kop": "DE TV-INRUILACTIE EINDIGT OVER",
-  "eindmelding": ["DE TV-INRUILACTIE", "IS AFGELOPEN"],
-  "eindmelding_sub": "Bekijk onze actuele acties op eptummers.nl",
+  "kop": "TV-INRUILACTIE",
+  "subkop": "NOG T/M 1 NOVEMBER  •  OP=OP",
+  "labels": ["DAGEN", "UREN", "MINUTEN", "SECONDEN"],
+  "eindmelding": "DEZE ACTIE IS AFGELOPEN",
+  "eindmelding_sub": "BEKIJK ONZE ACTUELE ACTIES OP EPTUMMERS.NL",
   "kleuren": {
-    "achtergrond": "#171717",
-    "vak": "#2B2B2B",
-    "cijfers": "#FFFFFF",
-    "labels": "#28A745",
-    "accent": "#F28C00",
-    "kop": "#FFFFFF"
+    "achtergrond": "#FFF200",
+    "rand": "#2CA843",
+    "vak": "#FFFFFF",
+    "cijfers": "#222222",
+    "labelbalk": "#F37300",
+    "labeltekst": "#FFFFFF",
+    "schaduw": "#222222",
+    "kop": "#222222"
   }
 }
