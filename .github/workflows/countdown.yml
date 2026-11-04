@@ -5,7 +5,8 @@ name: Countdown bijwerken
 on:
   schedule:
     # Elke 5 minuten (het minimum van GitHub), net naast het hele uur
-    # omdat GitHub op :00 het drukst is. GitHub kan runs vertragen of overslaan.
+    # omdat GitHub op :00 het drukst is. GitHub vertraagt deze runs in de praktijk
+    # tot soms uren; de job 'volgende' hieronder zorgt daarom voor de echte 5 minuten.
     - cron: "2-59/5 * * * *"
   push:
     branches: [main]
@@ -23,6 +24,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      lopend: ${{ steps.genereren.outputs.lopend }}
     steps:
       - uses: actions/checkout@v7
 
@@ -44,6 +47,7 @@ jobs:
       # --offset 60: de GIF staat ongeveer een minuut na het genereren online,
       # dus het aftellen begint vanaf dat moment.
       - name: GIF's genereren
+        id: genereren
         run: python scripts/generate_countdown.py --offset 60
 
       - uses: actions/upload-pages-artifact@v5
@@ -59,3 +63,22 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # Zolang er een campagne loopt, start deze job na 4 minuten wachten zelf de
+  # volgende run. Zo wordt de GIF ongeveer elke 5 minuten vernieuwd, zonder
+  # afhankelijk te zijn van de (trage) planning van GitHub of een computer die aanstaat.
+  # Is de laatste campagne langer dan 30 minuten afgelopen, dan stopt de ketting.
+  volgende:
+    needs: [build, deploy]
+    if: ${{ always() && needs.build.outputs.lopend == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Wachten en volgende run starten
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          sleep 240
+          gh workflow run countdown.yml --ref main

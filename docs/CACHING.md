@@ -5,8 +5,8 @@
 De GIF op GitHub Pages is een **vast bestand** dat ongeveer elke 5 minuten wordt vervangen.
 Hij wordt **niet** per e-mailopening gemaakt. Wat de ontvanger ziet, hangt af van drie dingen:
 
-1. **Wanneer GitHub de GIF voor het laatst heeft gemaakt.** Normaal is dat elke 5 minuten,
-   maar GitHub kan geplande runs vertragen (soms 10 tot 30 minuten) of overslaan bij drukte.
+1. **Wanneer GitHub de GIF voor het laatst heeft gemaakt.** Dat is ongeveer elke 5 minuten
+   (zie hieronder hoe), maar een enkele run kan een paar minuten vertraging hebben.
 2. **De cache van GitHub Pages.** Pages stuurt `Cache-Control: max-age=600` mee,
    dus browsers en proxy's mogen de GIF tot 10 minuten bewaren.
 3. **De cache van de e-mailclient.** Zie hieronder.
@@ -41,7 +41,11 @@ Afbeeldingen uitgeschakeld? Dan ziet de ontvanger de alt-tekst
 
 ## Andere beperkingen van GitHub
 
-- Geplande workflows draaien minimaal elke 5 minuten. Vaker kan niet.
+- Geplande workflows draaien minimaal elke 5 minuten, maar GitHub vertraagt ze in de praktijk sterk.
+  Begin november 2026 draaiden ze maar zo'n 4 keer per dag. Daarom start de workflow zichzelf opnieuw
+  (job `volgende`): na elke run wacht hij 4 minuten en start dan de volgende run. Dat geeft ongeveer elke
+  5 minuten een nieuwe GIF, zonder computer die aan moet staan. Is de laatste campagne langer dan
+  30 minuten afgelopen, dan stopt de ketting vanzelf. Een gemiste run of een push start hem weer.
 - Bij een openbare repository zet GitHub geplande workflows uit na **60 dagen zonder wijzigingen**.
   Je krijgt daar een mail over. Zet de workflow dan weer aan via **Actions**.
 - De GIF zelf is ongeveer 210 KB voor 180 frames. Alleen het secondenvak verandert per frame,

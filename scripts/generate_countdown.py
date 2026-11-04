@@ -15,6 +15,7 @@ Gebruik:
 import argparse
 import html
 import json
+import os
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -175,9 +176,13 @@ class Renderer:
         return img
 
 
-def build_frames(campaign, renderer, now):
+def campaign_end(campaign):
     tz = ZoneInfo(campaign.get("tijdzone", "Europe/Amsterdam"))
-    end = datetime.strptime(campaign["einde"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=tz)
+    return datetime.strptime(campaign["einde"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=tz)
+
+
+def build_frames(campaign, renderer, now):
+    end = campaign_end(campaign)
     frames = []
     for i in range(FRAMES):
         left = int((end - (now + timedelta(seconds=i))).total_seconds())
@@ -266,6 +271,15 @@ def main():
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     write_index(campaigns, now)
+
+    # Loopt er nog een campagne (of is hij net afgelopen)? Dan start de workflow
+    # zichzelf over enkele minuten opnieuw. Daarna stopt die ketting vanzelf.
+    running = any(campaign_end(c) > now - timedelta(minutes=30) for c in campaigns)
+    print(f"Nog lopende campagne: {'ja' if running else 'nee'}")
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a", encoding="utf-8") as f:
+            f.write(f"lopend={'true' if running else 'false'}\n")
 
 
 if __name__ == "__main__":
