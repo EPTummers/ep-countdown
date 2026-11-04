@@ -27,7 +27,7 @@ aftelt terwijl de actie al voorbij is.
 | **Apple Mail (iPhone/Mac)** | Ja | Met *Bescherming van Mail-privacy* laadt Apple de afbeeldingen al bij **aflevering** voor. De countdown toont dan de stand van het verzendmoment, niet die van de opening. |
 
 Afbeeldingen uitgeschakeld? Dan ziet de ontvanger de alt-tekst
-"Aftellen tot 1 november". Daarom staat de einddatum ook als tekst in de groene balk.
+"Aftellen tot 5 november". Daarom staat de einddatum ook als tekst in de groene balk.
 
 ## Wat we al doen om de stand zo actueel mogelijk te houden
 

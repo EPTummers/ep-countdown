@@ -58,7 +58,7 @@ Voorbeeld `campaigns/tv-inruilactie.json`:
 | `einde` | Einddatum en -tijd als `JJJJ-MM-DD UU:MM:SS` |
 | `tijdzone` | Altijd `Europe/Amsterdam` (zomer- en wintertijd gaan automatisch) |
 | `kop` | Grote titel bovenaan de GIF |
-| `subkop` | Regel onder de titel, bijv. `NOG T/M 1 NOVEMBER  •  OP=OP` |
+| `subkop` | Regel onder de titel, bijv. `NOG T/M 5 NOVEMBER  •  OP=OP` |
 | `labels` | Teksten in de oranje balken, bijv. `["DAGEN", "UREN", "MIN", "SEC"]` |
 | `eindmelding` | Tekst in het witte vak na afloop |
 | `eindmelding_sub` | Tekst in de oranje balk na afloop (mag `""` zijn) |
@@ -77,7 +77,7 @@ de slug, link en teksten aan te passen.
 
 ```bash
 pip install -r requirements.txt
-python scripts/generate_countdown.py --now "2026-11-01 23:58:30"
+python scripts/generate_countdown.py --now "2026-11-05 23:58:30"
 ```
 
 Het resultaat staat in `_site/`. Met `--now` simuleer je een tijdstip, bijvoorbeeld om de eindmelding te testen.
